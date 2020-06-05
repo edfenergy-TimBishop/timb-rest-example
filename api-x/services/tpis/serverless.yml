@@ -1,0 +1,85 @@
+custom:
+  base: smec-example
+  resource: tpi
+
+service: ${self:custom.base}-${self:custom.resource}
+
+provider:
+  name: aws
+  runtime: python3.8
+  region: eu-west-1
+  stage: ${opt:stage, 'dev'}
+  memorySize: 128
+  stackTags:
+    PRODUCT: example
+    STAGE: ${self:provider.stage}
+  apiGateway:
+    restApiId: ${ssm:/${self:custom.base}/api_id/${self:provider.stage}}
+    restApiRootResourceId: ${ssm:/${self:custom.base}/api_base/${self:provider.stage}}
+
+package:
+  include:
+    - "*.py"
+    - "../../managers/TPIManager.py"
+    - "../../models/TPI.py"
+    - "../../models/Model.py"
+  exclude:
+    - "**/**"
+
+functions:
+  list:
+    name: ${self:custom.base}-${self:provider.stage}-${self:custom.resource}-list
+    handler: handler.list      
+    events:
+      - http:
+          path: ${self:custom.resource}
+          method: get 
+          cors: true
+
+  create:
+    name: ${self:custom.base}-${self:provider.stage}-${self:custom.resource}-create
+    handler: handler.create
+    events:
+      - http:
+          path: ${self:custom.resource}
+          method: post
+          cors: true
+
+  read:
+    name: ${self:custom.base}-${self:provider.stage}-${self:custom.resource}-read
+    handler: handler.read
+    events:
+      - http:
+          path: ${self:custom.resource}/{id}
+          method: get
+          cors: true
+          integration: lambda
+          request:
+            paths:
+              id: true
+
+  update:
+    name: ${self:custom.base}-${self:provider.stage}-${self:custom.resource}-update
+    handler: handler.update
+    events:
+      - http:
+          path: ${self:custom.resource}/{id}
+          method: put
+          cors: true
+          integration: lambda
+          request:
+            paths:
+              id: true
+  
+  delete:
+    name: ${self:custom.base}-${self:provider.stage}-${self:custom.resource}-delete
+    handler: handler.delete
+    events:
+      - http:
+          path: ${self:custom.resource}/{id}
+          method: delete
+          cors: true
+          integration: lambda
+          request:
+            paths:
+              id: true
