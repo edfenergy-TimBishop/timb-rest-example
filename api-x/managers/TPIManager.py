@@ -19,6 +19,7 @@ class TPIManager:
     def list(self):
         pageDefault = 0
         pageSizeDefault = 0
+        searchDefault = ''
 
         status = 200
         try:
@@ -31,15 +32,30 @@ class TPIManager:
         except:
             pageSize = pageSizeDefault
 
-        query = self.model.selectQuery()
+        try:
+            search = self.event['queryStringParameters']['search']
+        except:
+            search = searchDefault
+
+        if search == '':
+            query = self.model.selectQuery()
+        else:
+            query = self.model.searchQuery(search)
         if (pageSize > 0):
             offset = page * pageSize
             query += " LIMIT {0} OFFSET {1}".format(pageSize, offset)
-
         response = self.model.executeStatment(query)
-        body = self.model.formatResponse(response)
+        result = self.model.formatResponse(response)
 
-        return {
+        query = self.model.countQuery()
+        response = self.model.executeStatment(query)
+        countResult = self.model.formatResponse(response)
+
+        body = {}
+        body['result'] = result
+        body['total'] = countResult[0]['cnt']
+
+        response = {
             "statusCode": status,
             "headers": {
                 "Access-Control-Allow-Origin": "*",
@@ -48,6 +64,7 @@ class TPIManager:
             "body": json.dumps(body),
             "isBase64Encoded": False
         }
+        return response
 
     def create(self):
         status = 200
@@ -56,12 +73,21 @@ class TPIManager:
         # todo: validation
         query = self.model.insertQuery(data)
         response = self.model.executeStatment(query)
+        result = self.model.formatResponse(response)
 
-        body = self.model.formatResponse(response)
-        #body = {
-        #    "query": query,
-        #    "response": response
-        #}
+        tpiId = result[0]['tpiId']
+
+        query = self.model.selectQuery(tpiId)
+        response = self.model.executeStatment(query)
+        result = self.model.formatResponse(response)
+
+        body = {}
+        count = len(result)
+        if (count == 1):
+            body['result'] = result[0]
+        else:
+            body['result'] = result
+        body['total'] = count
 
         response = {
             "statusCode": status,
@@ -82,8 +108,16 @@ class TPIManager:
 
         query = self.model.selectQuery(id)
         response = self.model.executeStatment(query)
+        result = self.model.formatResponse(response)
 
-        return self.model.formatResponse(response)
+        body = {}
+        count = len(result)
+        if (count == 1):
+            body['result'] = result[0]
+        else:
+            body['result'] = result
+        body['total'] = count
+        return body
 
     def update(self):
         try:
@@ -94,11 +128,19 @@ class TPIManager:
         data = self.event['body']
         # todo: validation
         query = self.model.updateQuery(id, data)
-        response = self.model.executeStatment(query)
+        result = self.model.executeStatment(query)
 
-        body = {
-            "query": query
-        }
+        query = self.model.selectQuery(id)
+        response = self.model.executeStatment(query)
+        result = self.model.formatResponse(response)
+
+        body = {}
+        count = len(result)
+        if (count == 1):
+            body['result'] = result[0]
+        else:
+            body['result'] = result
+        body['total'] = count
         return body 
 
     def delete(self):
@@ -111,6 +153,6 @@ class TPIManager:
         response = self.model.executeStatment(query)
 
         body = {
-            "query": query
+            "result": {}
         }
-        return body 
+        return body
