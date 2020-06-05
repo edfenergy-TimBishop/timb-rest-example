@@ -8,8 +8,7 @@ class Model:
         self.fillable = {}
         self.translate = {}
         self.userId = 'admin'
-        self.created_at = 'created_at'
-        self.updated_at = 'updated_at'
+        self.where = ''
 
         self.ssmClient = boto3.client('ssm')
         self.dbName = self._ssmGetParameter('/smec-example/smec-postgres-db-1/dbName')
@@ -72,8 +71,25 @@ class Model:
     def selectQuery(self, id = None):
         result = "SELECT * FROM {0}".format(self.table)
         if id != None:
-            result += " WHERE {0}={1}".format(self.primaryKey, id)
+            self.where = "{0}={1}".format(self.primaryKey, id)
+            result += " WHERE {0}".format(self.where)
         result += " ORDER BY {0}".format(self.primaryKey)
+        return result
+
+    # build search query
+    def searchQuery(self, search = ''):
+        result = "SELECT * FROM {0}".format(self.table)
+        if search != '':
+            self.where = "LOWER({0}) LIKE LOWER('{1}')".format('description', '%' + search + '%')
+            result += " WHERE {0}".format(self.where)
+        result += " ORDER BY {0}".format(self.primaryKey)
+        return result
+
+    # build count query
+    def countQuery(self):
+        result = "SELECT COUNT(*) cnt FROM {0}".format(self.table)
+        if self.where != '':
+            result += " WHERE {0}".format(self.where)
         return result
 
     # build insert query
