@@ -2,9 +2,9 @@ from models.Model import Model
 
 class Contact(Model):
     def __init__(self):
-        super(TPI, self).__init__()
-        self.table = 'TPIs'
-        self.primaryKey = 'tpiId'
+        super(Contact, self).__init__()
+        self.table = 'Contacts'
+        self.primaryKey = 'contactId'
         self.fillable = {
             'contactType': 'string',
             'description': 'string',
