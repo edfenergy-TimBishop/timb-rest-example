@@ -16,6 +16,7 @@ provider:
   apiGateway:
     restApiId: ${ssm:/${self:custom.base}/api_id/${self:provider.stage}}
     restApiRootResourceId: ${ssm:/${self:custom.base}/api_base/${self:provider.stage}}
+  role: arn:aws:iam::745463184050:role/smec-example-default-eu-west-1-lambdaRole
 
 package:
   include:
